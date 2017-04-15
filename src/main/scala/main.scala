@@ -7,13 +7,8 @@ import org.http4s.server.{Server, ServerApp}
 
 import scalaz.concurrent.Task
 
-object Main extends ServerApp {
-  // jawnstreamz needs to know what JSON AST you want
-  implicit val f = io.circe.jawn.CirceSupportParser.facade
-  implicit val j = CirceInstances.withPrinter(Printer.noSpaces).jsonEncoder
-
-  val client = new StreamTwit(
-    sys.env("CONSUMER_KEY"), sys.env("CONSUMER_SECRET"), sys.env("ACCESS_KEY"), sys.env("ACCESS_SECRET"))
+object Main extends ServerApp with ServerConfig {
+  val client = new StreamTwit(consumerKey, consumerSecret, accessKey, accessSecret)
 
   val service = HttpService {
     case GET -> Root / "sample-stream" =>
@@ -29,4 +24,14 @@ object Main extends ServerApp {
       .mountService(service, "/")
       .start
   }
+}
+
+trait ServerConfig {
+  implicit val jsonFacade = io.circe.jawn.CirceSupportParser.facade
+  implicit val jsonEncoder = CirceInstances.withPrinter(Printer.noSpaces).jsonEncoder
+
+  val consumerKey = sys.env("CONSUMER_KEY")
+  val consumerSecret = sys.env("CONSUMER_SECRET")
+  val accessKey = sys.env("ACCESS_KEY")
+  val accessSecret = sys.env("ACCESS_SECRET")
 }
